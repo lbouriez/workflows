@@ -80,7 +80,7 @@ jobs:
       - name: 🔂 Wait for other runs to complete
         uses: softprops/turnstyle@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@v3
       - name: 🏗 Set up build cache
@@ -139,14 +139,14 @@ jobs:
           load: true
           # yamllint disable rule:line-length
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ needs.information.outputs.slug }}/${{ matrix.architecture }}:${{ needs.information.outputs.environment }}
-            ghcr.io/${{ github.repository_owner }}/${{ needs.information.outputs.slug }}/${{ matrix.architecture }}:${{ needs.information.outputs.version }}
+            ghcr.io/${{ github.repository }}/${{ matrix.architecture }}:${{ needs.information.outputs.environment }}
+            ghcr.io/${{ github.repository }}/${{ matrix.architecture }}:${{ needs.information.outputs.version }}
           # yamllint enable rule:line-length
           context: ${{ needs.information.outputs.target }}
           file: ${{ needs.information.outputs.target }}/Dockerfile
           cache-from: |
             type=local,src=/tmp/.docker-cache
-            ghcr.io/${{ github.repository_owner }}/${{ needs.information.outputs.slug }}/${{ matrix.architecture }}:edge
+            ghcr.io/${{ github.repository }}/${{ matrix.architecture }}:edge
           cache-to: type=local,mode=max,dest=/tmp/.docker-cache-new
           platforms: ${{ steps.flags.outputs.platform }}
           build-args: |
@@ -184,59 +184,9 @@ jobs:
         # yamllint disable rule:line-length
         run: |
           docker push \
-            "ghcr.io/${{ github.repository_owner }}/${{ needs.information.outputs.slug }}/${{ matrix.architecture }}:${{ needs.information.outputs.environment }}"
+            "ghcr.io/${{ github.repository }}/${{ matrix.architecture }}:${{ needs.information.outputs.environment }}"
           docker push \
-            "ghcr.io/${{ github.repository_owner }}/${{ needs.information.outputs.slug }}/${{ matrix.architecture }}:${{ needs.information.outputs.version }}"
-
-  publish-edge:
-    name: 📢 Publish to edge repository
-    if: needs.information.outputs.environment == 'edge'
-    needs:
-      - information
-      - deploy
-    environment:
-      name: ${{ needs.information.outputs.environment }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🚀 Dispatch repository updater update signal
-        uses: peter-evans/repository-dispatch@v2.0.0
-        with:
-          token: ${{ secrets.DISPATCH_TOKEN }}
-          repository: ${{ github.repository_owner }}/repository-edge
-          event-type: update
-          client-payload: >
-            {
-              "addon": "${{ needs.information.outputs.slug }}",
-              "name": "${{ needs.information.outputs.name }}",
-              "repository": "${{ github.repository }}",
-              "version": "${{ needs.information.outputs.version }}"
-            }
-
-  publish-beta:
-    name: 📢 Publish to beta repository
-    if: |
-      needs.information.outputs.environment == 'beta' ||
-      needs.information.outputs.environment == 'stable'
-    needs:
-      - information
-      - deploy
-    environment:
-      name: ${{ needs.information.outputs.environment }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🚀 Dispatch repository updater update signal
-        uses: peter-evans/repository-dispatch@v2.0.0
-        with:
-          token: ${{ secrets.DISPATCH_TOKEN }}
-          repository: ${{ github.repository_owner }}/repository-beta
-          event-type: update
-          client-payload: >
-            {
-              "addon": "${{ needs.information.outputs.slug }}",
-              "name": "${{ needs.information.outputs.name }}",
-              "repository": "${{ github.repository }}",
-              "version": "${{ github.event.release.tag_name }}"
-            }
+            "ghcr.io/${{ github.repository }}/${{ matrix.architecture }}:${{ needs.information.outputs.version }}"
 
   publish-stable:
     name: 📢 Publish to stable repository
@@ -252,7 +202,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2.0.0
         with:
           token: ${{ secrets.DISPATCH_TOKEN }}
-          repository: ${{ github.repository_owner }}/repository
+          repository: ${{ github.repository_owner }}/hassio-addons
           event-type: update
           client-payload: >
             {
